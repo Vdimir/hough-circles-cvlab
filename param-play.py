@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import os
 
 class ImageBarUI:
     def __init__(self, upd_func, trackbars):
@@ -10,29 +10,36 @@ class ImageBarUI:
 
         self.upd_func = upd_func
         self.trackbars = trackbars
-
+        self.img = None
         for (name, mn, mx, dflt) in trackbars:
             cv2.createTrackbar(name, self.WINDOW_NAME, dflt - mn, mx - mn, lambda x: None)
 
+    def redraw_img(self):
+        cv2.imshow(self.WINDOW_NAME, self.img)
+
     def run(self):
-        while True:
+        k = 0
+        while k != 27:
             k = cv2.waitKey(100) & 0xFF
-            if k == 27:
-                break
 
             args = {}
             for (name, mn, mx, _) in self.trackbars:
                 args[name] = cv2.getTrackbarPos(name, self.WINDOW_NAME) + mn
 
-            t = self.upd_func(**args)
-            cv2.imshow(self.WINDOW_NAME, t)
+            if self.img is None:
+                self.img = self.upd_func(**args)
+
+            if k == ord('x'):
+                self.img = self.upd_func(**args)
+
+            self.redraw_img()
 
         cv2.startWindowThread()
         cv2.destroyAllWindows()
 
 
-fname = 10
-img = cv2.imread("./img/%d.jpg" % fname)
+fname = os.sys.argv[1]
+img = cv2.imread("%s" % fname)
 gimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
@@ -42,6 +49,7 @@ def upd(blur=0, **kwargs):
     timg = img.copy()
     if circles is None:
         return timg
+    (_, cirCnt, _) = circles.shape
     for i in circles[0, :]:
         cv2.circle(timg, (i[0], i[1]), i[2], (0, 255, 0), 2)
         cv2.circle(timg, (i[0], i[1]), 2, (0, 0, 255), 3)
