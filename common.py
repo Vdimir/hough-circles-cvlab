@@ -1,28 +1,33 @@
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
+import os
+
 
 def show_image(img):
     if img is None:
         print('None!')
-        return 
+        return
     plt.axis('off')
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     plt.show()
+
 
 def load_img(path, n=None):
     fname = n or 1
     img = cv2.imread("%s/%d.jpg" % (path, fname))
     return fname, img
 
+
 def wheelDetector(img, min_Rad, max_Rad, accumulatorThreshold, minDistance, paramKenny):
-    gimg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    bimg = cv2.blur(img, (5, 5))
+    gimg = cv2.cvtColor(bimg, cv2.COLOR_BGR2GRAY)
     d = min(gimg.shape)
-    
+
     circles = cv2.HoughCircles(gimg, cv2.HOUGH_GRADIENT, 1, minDist=minDistance,
                                param1=paramKenny,
                                param2=accumulatorThreshold, minRadius=min_Rad, maxRadius=max_Rad)
-    
+
     if circles is None:
         return None, False
     timg = img.copy()
@@ -33,19 +38,22 @@ def wheelDetector(img, min_Rad, max_Rad, accumulatorThreshold, minDistance, para
         for j in circles[0, :]:
             if (abs(i[0] - j[0]) >= 50) and (abs(i[1] - j[1]) <= 75) and (abs(i[2] != j[2]) <= 10):
                 hasCar = True
-    
+
     return timg, hasCar
 
-img_path = "./img/Cars"
+
+img_path = "/home/petr/Program files/Python_projects/Haugh/hough-circles-cvlab-master/img/Cars"
+# img_path = "./img/Cars"
+
+img_write_path = "/home/petr/Program files/Python_projects/Haugh/hough-circles-cvlab-master/img/res"
+# img_write_path = "./img/res"
+
+
 def test(image_number):
     _, img = load_img(img_path, image_number)
     if img is None:
-        print("No such image %d" % image_number)
         return
-    show_image(img)
 
-    bimg = cv2.blur(img, (5,5))
-    #for accThr in range(150, 50, -5):
     minR = 120
     maxR = 150
     accThr = 150
@@ -53,19 +61,27 @@ def test(image_number):
     paramKenny = 170
     hasCar = False
     while (minR >= 0) and (not hasCar):
-        while (accThr >=40) and (not hasCar) :   
-            #show_image(foo2(img, minR, maxR, accThr))  
+        while (accThr >= 40) and (not hasCar):
             while (paramKenny > 70) and (not hasCar):
-                foo2_img, hasCar = wheelDetector(bimg, minR, maxR, accThr, minDist, paramKenny)
-                paramKenny -=10
+                foo2_img, hasCar = wheelDetector(img, minR, maxR, accThr, minDist, paramKenny)
+                paramKenny -= 10
             accThr -= 5
             paramKenny = 150
         minR -= 5
         maxR -= 5
         accThr = 150
+    return (hasCar, img, foo2_img)
 
-    show_image(foo2_img)
-    if hasCar:
-        print("Car is here")
-    else:
-        print("This image don't has car")
+
+if __name__ == "__main__":
+    if not os.path.exists(img_write_path):
+        os.makedirs(img_write_path)
+        print("Directory %s created" % img_write_path)
+
+    n_img = 100
+    for i in range(1, n_img + 1):
+        print("%d/%d" % (i, n_img))
+        res = test(i)
+        if res is None:
+            continue
+        cv2.imwrite("%s/%d-%d.png" % (img_write_path, i, res[0]), res[2])
