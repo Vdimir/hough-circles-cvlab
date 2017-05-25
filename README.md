@@ -1,3 +1,4 @@
+[Изображения с отмеченными кругами](https://www.dropbox.com/sh/gofg4aqlwde2nv6/AAB2c8yKqTeObjGGmYUwSfuDa?dl=0)
 
 ## Пример работы алгоритма
 
